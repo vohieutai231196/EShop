@@ -1,14 +1,9 @@
-﻿using BuildingBlocks.CQRS;
-using CatalogAPI.Model;
-using MediatR;
-using System.Windows.Input;
-
-namespace CatalogAPI.Products.CreateProduct
+﻿namespace CatalogAPI.Products.CreateProduct
 {
     public record CreateProductCommand(string Name, decimal Price, decimal? DiscountPrice, int StockQuantity, string? ImageUrl, int CategoryId, bool IsActive = true, 
                 bool IsFeatured = false, double? Weight = null, string? Brand = null): ICommand<CreateProductResult>;
-    public record CreateProductResult(Guid Id); // the value return
-    public class CreateProductCommandHandler : ICommandHandler<CreateProductCommand, CreateProductResult>
+    public record CreateProductResult(int Id); // the value return
+    internal class CreateProductCommandHandler(IDocumentSession session) : ICommandHandler<CreateProductCommand, CreateProductResult>
     {
         public async Task<CreateProductResult> Handle(CreateProductCommand Command, CancellationToken cancellationToken)
         {
@@ -23,9 +18,10 @@ namespace CatalogAPI.Products.CreateProduct
                 ImageUrl = Command.ImageUrl
             };
             // save to database
-
+            session.Store(product);
+            await session.SaveChangesAsync(cancellationToken);
             //return CreateProductResult result
-            return new CreateProductResult(Guid.NewGuid());
+            return new CreateProductResult(product.Id);
 
         }
     }
